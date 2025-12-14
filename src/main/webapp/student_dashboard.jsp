@@ -2,7 +2,6 @@
 <%@ page import="java.sql.*,jakarta.servlet.http.*" %>
 
 <%
-    // Student session check
     HttpSession studentSession = request.getSession(false);
     if(studentSession == null || studentSession.getAttribute("studentId") == null) {
         response.sendRedirect("student_login.jsp");
@@ -14,7 +13,7 @@
 %>
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Student Dashboard | OCMS</title>
@@ -22,52 +21,67 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        /* Body & Fonts */
-        body { 
-            font-family: 'Georgia', serif; 
-            background: linear-gradient(to right, #e0eafc, #cfdef3); 
-            min-height: 100vh;
+        body {
+            background: #f2f4f7;
+            font-family: 'Segoe UI', sans-serif;
         }
 
-        /* Cards */
-        .card-box {
-            border-radius: 15px;
-            transition: 0.3s;
-            padding: 25px;
-            margin-bottom: 25px;
+        .course-card {
             background: #ffffff;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+            transition: 0.3s;
+            height: 100%;
         }
-        .card-box:hover {
+
+        .course-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.12);
         }
 
-        /* Navbar */
-        .navbar-brand { font-weight: 700; font-size: 1.4rem; }
-        .navbar .btn { font-weight: 600; }
+        .course-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: #4f46e5;
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
 
-        table th, table td { vertical-align: middle; }
+        .navbar {
+            background-color: #1f2937;
+        }
+        .navbar a, .navbar span {
+            color: #f9fafb !important;
+            font-weight: 600;
+        }
 
-        /* Buttons & Forms */
-        .form-select, .btn { border-radius: 12px; }
-        .btn-primary { font-weight: 600; }
-
-        /* Hero / welcome text */
-        .hero-text { font-weight: 600; color: #1f2937; }
-
-        /* Responsive max-width cards */
-        .card-box table { background: #f9fafb; }
+        .btn-danger {
+            background-color: #dc2626;
+            border: none;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
     </style>
 </head>
 <body>
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="#">Student Dashboard</a>
         <div class="d-flex align-items-center">
-            <span class="text-white fw-bold me-3">Welcome, <%= studentName %></span>
-            <a href="index.jsp" class="btn btn-danger"><i class="bi bi-box-arrow-left me-1"></i> Logout / Home</a>
+            <span class="me-3 fw-bold">Welcome, <%= studentName %></span>
+            <a href="index.jsp" class="btn btn-danger btn-sm">
+                <i class="bi bi-box-arrow-left"></i> Logout
+            </a>
         </div>
     </div>
 </nav>
@@ -75,103 +89,117 @@
 <div class="container mt-4">
 
     <!-- Enrolled Courses -->
-    <div class="card shadow-sm card-box">
-        <h4 class="mb-3">Your Enrolled Courses</h4>
-        <table class="table table-bordered table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>Course ID</th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Instructor</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-            <%
-                try {
-                    Class.forName("com.mysql.cj.jdbc.Driver");
-                    Connection con = DriverManager.getConnection(
-                        "jdbc:mysql://localhost:3306/OCMS","root","SKR@133957"
-                    );
+    <h4 class="mb-3">Your Enrolled Courses</h4>
+    <div class="row g-4 mb-5">
 
-                    PreparedStatement ps = con.prepareStatement(
-                        "SELECT c.id, c.title, c.description, c.instructor " +
-                        "FROM courses c JOIN student_courses sc ON c.id=sc.course_id " +
-                        "WHERE sc.student_id=? ORDER BY c.id DESC"
-                    );
-                    ps.setInt(1, studentId);
-                    ResultSet rs = ps.executeQuery();
+    <%
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/OCMS","root","SKR@133957"
+            );
 
-                    while(rs.next()){
-            %>
-                <tr>
-                    <td><%= rs.getInt("id") %></td>
-                    <td><%= rs.getString("title") %></td>
-                    <td><%= rs.getString("description") %></td>
-                    <td><%= rs.getString("instructor") %></td>
-                    <td>
-                        <a href="student_remove_course.jsp?id=<%= rs.getInt("id") %>"
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('Remove this course?');">
-                           Remove
-                        </a>
-                    </td>
-                </tr>
-            <%
-                    }
-                    con.close();
-                } catch(Exception e){
-                    out.println("<tr><td colspan='5'>Error: "+e.getMessage()+"</td></tr>");
-                }
-            %>
-            </tbody>
-        </table>
-    </div>
+            PreparedStatement ps = con.prepareStatement(
+                "SELECT c.id, c.title, c.description, c.instructor " +
+                "FROM courses c JOIN student_courses sc ON c.id=sc.course_id " +
+                "WHERE sc.student_id=? ORDER BY c.id DESC"
+            );
+            ps.setInt(1, studentId);
+            ResultSet rs = ps.executeQuery();
 
-    <!-- Enroll in New Course -->
-    <div class="card shadow-sm card-box">
-        <h4 class="mb-3">Enroll in New Course</h4>
-
-        <form action="student_add_course.jsp" method="post">
-            <div class="row g-2">
-                <div class="col-md-12">
-                    <select name="courseId" class="form-select" required>
-                        <option value="">Select Course</option>
-                        <%
-                            try {
-                                Class.forName("com.mysql.cj.jdbc.Driver");
-                                Connection con = DriverManager.getConnection(
-                                    "jdbc:mysql://localhost:3306/OCMS","root","SKR@133957"
-                                );
-
-                                PreparedStatement ps2 = con.prepareStatement(
-                                    "SELECT * FROM courses WHERE id NOT IN " +
-                                    "(SELECT course_id FROM student_courses WHERE student_id=?)"
-                                );
-                                ps2.setInt(1, studentId);
-                                ResultSet rs2 = ps2.executeQuery();
-                                while(rs2.next()){
-                        %>
-                            <option value="<%= rs2.getInt("id") %>">
-                                <%= rs2.getString("title") %> - <%= rs2.getString("instructor") %>
-                            </option>
-                        <%
-                                }
-                                con.close();
-                            } catch(Exception e){
-                                out.println("<option>Error loading courses</option>");
-                            }
-                        %>
-                    </select>
+            boolean hasCourse = false;
+            while(rs.next()){
+                hasCourse = true;
+    %>
+        <div class="col-md-4 col-lg-3">
+            <div class="course-card text-center">
+                <div class="course-icon">
+                    <%= rs.getString("title").substring(0,1).toUpperCase() %>
                 </div>
+
+                <h5 class="fw-bold"><%= rs.getString("title") %></h5>
+                <p class="text-muted small mb-1">
+                    <%= rs.getString("description") %>
+                </p>
+                <p class="fw-semibold text-primary mb-3">
+                    <%= rs.getString("instructor") %>
+                </p>
+
+                <a href="student_remove_course.jsp?id=<%= rs.getInt("id") %>"
+                   class="btn btn-danger btn-sm w-100"
+                   onclick="return confirm('Remove this course?');">
+                    Remove
+                </a>
             </div>
-            <button class="btn btn-primary mt-3 w-100">Enroll</button>
-        </form>
+        </div>
+    <%
+            }
+            if(!hasCourse){
+    %>
+        <div class="col-12 text-muted text-center">
+            You have not enrolled in any course yet.
+        </div>
+    <%
+            }
+            con.close();
+        } catch(Exception e){
+            out.println("<div class='col-12 text-danger'>Error: "+e.getMessage()+"</div>");
+        }
+    %>
     </div>
 
+    <!-- Enroll New Course -->
+    <h4 class="mb-3">Enroll in New Course</h4>
+    <div class="row g-4">
+
+    <%
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/OCMS","root","SKR@133957"
+            );
+
+            PreparedStatement ps2 = con.prepareStatement(
+                "SELECT * FROM courses WHERE id NOT IN " +
+                "(SELECT course_id FROM student_courses WHERE student_id=?)"
+            );
+            ps2.setInt(1, studentId);
+            ResultSet rs2 = ps2.executeQuery();
+
+            while(rs2.next()){
+    %>
+        <div class="col-md-4 col-lg-3">
+            <div class="course-card text-center">
+                <div class="course-icon bg-success">
+                    <%= rs2.getString("title").substring(0,1).toUpperCase() %>
+                </div>
+
+                <h5 class="fw-bold"><%= rs2.getString("title") %></h5>
+                <p class="text-muted small mb-2">
+                    <%= rs2.getString("description") %>
+                </p>
+                <p class="fw-semibold text-success mb-3">
+                    <%= rs2.getString("instructor") %>
+                </p>
+
+                <form action="student_add_course.jsp" method="post">
+                    <input type="hidden" name="courseId" value="<%= rs2.getInt("id") %>">
+                    <button class="btn btn-primary btn-sm w-100">
+                        Enroll
+                    </button>
+                </form>
+            </div>
+        </div>
+    <%
+            }
+            con.close();
+        } catch(Exception e){
+            out.println("<div class='col-12 text-danger'>Error loading courses</div>");
+        }
+    %>
+
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -2,7 +2,6 @@
 <%@ page import="java.sql.*" %>
 
 <%
-    // Admin session check
     if(session == null || session.getAttribute("adminEmail") == null){
         response.sendRedirect("admin_login.jsp");
         return;
@@ -18,38 +17,46 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        body { 
+        body {
             background: #eaeaea;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .card-box { 
-            border-radius: 18px; 
-            transition: all 0.3s ease; 
-            padding: 25px; 
-            margin-bottom: 25px; 
+        .card-box {
+            border-radius: 18px;
+            padding: 25px;
             background: #ffffff;
+            margin-bottom: 25px;
         }
-        .card-box:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 12px 28px rgba(0,0,0,0.12); 
+        .navbar {
+            background-color: #1f2937;
         }
-        textarea { resize: none; }
-        .table th, .table td { 
-            vertical-align: middle; 
+        .navbar a, .navbar span {
+            color: #f9fafb !important;
+            font-weight: 600;
         }
-        .table thead { 
-            background-color: #343a40; 
-            color: #fff; 
+
+        /* Course card style */
+        .course-card {
+            border-radius: 16px;
+            transition: 0.3s;
+            height: 100%;
         }
-        .table tbody tr:hover { 
-            background-color: #f1f3f5; 
+        .course-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15);
         }
-        .btn-primary { background-color: #4f46e5; border: none; }
-        .btn-primary:hover { background-color: #4338ca; }
-        .btn-danger { background-color: #dc2626; border: none; }
-        .btn-danger:hover { background-color: #b91c1c; }
-        .navbar { background-color: #1f2937; }
-        .navbar a, .navbar span { color: #f9fafb !important; font-weight: 600; }
+        .course-title {
+            font-weight: 700;
+            color: #4f46e5;
+        }
+        .course-instructor {
+            font-weight: 600;
+            color: #374151;
+        }
+        .course-desc {
+            font-size: 14px;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
@@ -65,7 +72,7 @@
 
 <div class="container mt-4">
 
-    <!-- Add Course Form -->
+    <!-- Add Course -->
     <div class="card-box shadow-sm">
         <h4 class="mb-3">Add New Course</h4>
         <form action="courses_add.jsp" method="post">
@@ -82,7 +89,9 @@
                                 Connection con2 = DriverManager.getConnection(
                                     "jdbc:mysql://localhost:3306/OCMS", "root", "SKR@133957"
                                 );
-                                PreparedStatement ps2 = con2.prepareStatement("SELECT id, name FROM teachers ORDER BY name ASC");
+                                PreparedStatement ps2 = con2.prepareStatement(
+                                    "SELECT id, name FROM teachers ORDER BY name ASC"
+                                );
                                 ResultSet rs2 = ps2.executeQuery();
                                 while(rs2.next()) {
                         %>
@@ -90,9 +99,7 @@
                         <%
                                 }
                                 con2.close();
-                            } catch(Exception e2){
-                                out.println("<option disabled>Error loading teachers</option>");
-                            }
+                            } catch(Exception e){}
                         %>
                     </select>
                 </div>
@@ -104,57 +111,48 @@
         </form>
     </div>
 
-    <!-- Course List -->
+    <!-- All Courses as Cards -->
     <div class="card-box shadow-sm">
-        <h4 class="mb-3">All Courses</h4>
-        <table class="table table-bordered table-hover">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Instructor</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-            <%
-                try {
-                    Class.forName("com.mysql.cj.jdbc.Driver");
-                    Connection con = DriverManager.getConnection(
-                        "jdbc:mysql://localhost:3306/OCMS", "root", "SKR@133957"
-                    );
+        <h4 class="mb-4">All Courses</h4>
 
-                    PreparedStatement ps = con.prepareStatement(
-                        "SELECT c.id, c.title, c.description, t.name AS instructor " +
-                        "FROM courses c LEFT JOIN teachers t ON c.instructor_id = t.id ORDER BY c.id DESC"
-                    );
-                    ResultSet rs = ps.executeQuery();
+        <div class="row g-4">
+        <%
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                Connection con = DriverManager.getConnection(
+                    "jdbc:mysql://localhost:3306/OCMS", "root", "SKR@133957"
+                );
 
-                    while(rs.next()){
-            %>
-                <tr>
-                    <td><%= rs.getInt("id") %></td>
-                    <td><%= rs.getString("title") %></td>
-                    <td><%= rs.getString("description") %></td>
-                    <td><%= rs.getString("instructor") %></td>
-                    <td>
-                        <a href="courses_delete.jsp?id=<%= rs.getInt("id") %>" 
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('Are you sure you want to delete this course?');">
-                            Delete
-                        </a>
-                    </td>
-                </tr>
-            <%
-                    }
-                    con.close();
-                } catch(Exception e){
-                    out.println("<tr><td colspan='5'>Error: "+e.getMessage()+"</td></tr>");
+                PreparedStatement ps = con.prepareStatement(
+                    "SELECT c.id, c.title, c.description, t.name AS instructor " +
+                    "FROM courses c LEFT JOIN teachers t ON c.instructor_id = t.id ORDER BY c.id DESC"
+                );
+                ResultSet rs = ps.executeQuery();
+
+                while(rs.next()){
+        %>
+            <div class="col-lg-4 col-md-6">
+                <div class="card course-card shadow-sm p-3">
+                    <h5 class="course-title"><%= rs.getString("title") %></h5>
+                    <p class="course-desc"><%= rs.getString("description") %></p>
+                    <p class="course-instructor">
+                        👨‍🏫 <%= rs.getString("instructor") %>
+                    </p>
+                    <a href="courses_delete.jsp?id=<%= rs.getInt("id") %>"
+                       class="btn btn-danger btn-sm mt-2"
+                       onclick="return confirm('Are you sure you want to delete this course?');">
+                        Delete
+                    </a>
+                </div>
+            </div>
+        <%
                 }
-            %>
-            </tbody>
-        </table>
+                con.close();
+            } catch(Exception e){
+                out.println("<p>Error loading courses</p>");
+            }
+        %>
+        </div>
     </div>
 
 </div>
